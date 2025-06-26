@@ -4,7 +4,8 @@ Settings management for AURA system.
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional, List
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, validator
+from pydantic_settings import BaseSettings
 import dotenv
 
 
