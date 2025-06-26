@@ -97,21 +97,29 @@ AURA consists of several key components:
 
 ## Advanced Memory System
 
-AURA features a sophisticated memory system with multimodal embedding capabilities:
+AURA features a sophisticated hierarchical memory system with relationship modeling and graph-based retrieval:
 
-### Retrieval Models (Embedders)
-- **Multimodal Chunk Embedding**: Encodes content blocks into vectors for coarse-grained retrieval
-- **Multimodal Token Embedding**: Encodes elements into sequence vectors for fine-grained search
-- **Context-Aware Embeddings**: Understands intra-document context for more relevant results
+### Three-Layer Storage Architecture
+- **L1: Hot Cache (Active Working Set)**: Fast access to current context
+- **L2: Session Memory (Session-level Index)**: Persistent session-level storage
+- **L3: Persistent Graph (Knowledge Graph)**: Long-term knowledge storage
 
-### Refinement Models (Rerankers)
-- **Multimodal Reranker**: Takes a query and candidate chunks to precisely score relevance
-- **Graph-Based Expansion**: Follows relationships to discover related content
+### Entity-Relationship Modeling
+- **First-Class Relationships**: Relationships have their own embeddings and can be retrieved directly
+- **Context-Aware Encoding**: Entity encoding includes relationship context
+- **Bidirectional Traversal**: Follow relationships in both directions
 
-### Memory Learning
-- **Preference Learning**: Automatically detects user preferences from interactions
-- **Pattern Recognition**: Identifies workflow patterns and best practices
-- **Continuous Improvement**: Memory evolves over time with usage
+### Graph-Based Retrieval
+- **Minimal Logical Closure**: Find related entities through relationship expansion
+- **Multi-hop Traversal**: Discover indirectly related but relevant entities
+- **Relevance Scoring**: Score based on entity similarity, relationship type, and path length
+
+### Memory Lifecycle Management
+- **Dynamic Promotion/Demotion**: Move entities between layers based on access patterns
+- **Prefetching**: Proactively load related entities
+- **Pattern Extraction**: Extract reusable patterns for long-term storage
+
+[Learn more about the memory system](docs/memory_system.md)
 
 ## AI Integration
 
