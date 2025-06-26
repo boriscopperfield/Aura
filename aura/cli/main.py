@@ -195,6 +195,12 @@ def _display_simulated_plan(confidence: float):
     
     if proposal and use_ai:
         try:
+            # Get task name for display
+            task_name = "AI Task"
+            task_event = next((e for e in proposal.events if e.type == DirectiveEventType.TASK_CREATED.value), None)
+            if task_event:
+                task_name = task_event.payload.get("name", "AI Task")
+            
             # Execute the transaction
             import asyncio
             result = asyncio.run(tx_manager.execute(proposal))
