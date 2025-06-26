@@ -27,7 +27,7 @@ console = Console()
 
 
 @app.command()
-async def run(
+def run(
     task_description: str = typer.Argument(..., help="High-level task description"),
     workspace: Path = typer.Option(
         Path.home() / "aura_workspace",
@@ -75,7 +75,8 @@ async def run(
                     time.sleep(0.1)
             
             # Create plan using AI
-            proposal = await planner.create_plan(task_description)
+            import asyncio
+            proposal = asyncio.run(planner.create_plan(task_description))
             confidence = proposal.confidence
             console.print(f"✓ Intent analyzed with {confidence:.0%} confidence\n")
         except Exception as e:
@@ -195,7 +196,8 @@ def _display_simulated_plan(confidence: float):
     if proposal and use_ai:
         try:
             # Execute the transaction
-            result = await tx_manager.execute(proposal)
+            import asyncio
+            result = asyncio.run(tx_manager.execute(proposal))
             
             if result.success:
                 console.print(f"[bold green]Transaction completed successfully![/bold green]")
