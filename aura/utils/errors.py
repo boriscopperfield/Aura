@@ -155,6 +155,31 @@ class ExecutionError(AuraError):
     pass
 
 
+class AgentError(AuraError):
+    """Agent related errors."""
+    pass
+
+
+class RateLimitError(AgentError):
+    """Rate limit exceeded error."""
+    pass
+
+
+class TimeoutError(AgentError):
+    """Timeout error."""
+    pass
+
+
+class NoAgentError(AgentError):
+    """No suitable agent found error."""
+    pass
+
+
+class LowConfidenceError(AgentError):
+    """Agent confidence too low error."""
+    pass
+
+
 def handle_exception(
     exc: Exception,
     log_level: str = "error",

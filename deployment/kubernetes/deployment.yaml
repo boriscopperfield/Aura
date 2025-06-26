@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aura-main
+  namespace: aura
+  labels:
+    app: aura-main
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: aura-main
+  template:
+    metadata:
+      labels:
+        app: aura-main
+        version: v1
+    spec:
+      containers:
+      - name: aura
+        image: aura:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: AURA_ENV
+          value: "production"
+        - name: AURA_CONFIG_PATH
+          value: "/app/config/config.yaml"
+        - name: AURA_AGENTS_CONFIG_PATH
+          value: "/app/config/agents.yaml"
+        envFrom:
+        - secretRef:
+            name: aura-secrets
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        - name: workspace-volume
+          mountPath: /app/workspace
+        - name: logs-volume
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+      volumes:
+      - name: config-volume
+        configMap:
+          name: aura-config
+      - name: workspace-volume
+        persistentVolumeClaim:
+          claimName: aura-workspace-pvc
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: aura-logs-pvc
+      restartPolicy: Always
+      
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aura-main-service
+  namespace: aura
+  labels:
+    app: aura-main
+spec:
+  selector:
+    app: aura-main
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aura-ingress
+  namespace: aura
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - aura.yourdomain.com
+    secretName: aura-tls
+  rules:
+  - host: aura.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: aura-main-service
+            port:
+              number: 80

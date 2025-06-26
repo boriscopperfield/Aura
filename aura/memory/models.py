@@ -60,6 +60,7 @@ class MemorySource(BaseModel):
     node_path: Optional[str] = None
     external_url: Optional[str] = None
     user_id: Optional[str] = None
+    session_id: Optional[str] = None
 
 
 class NamedEntity(BaseModel):
@@ -221,6 +222,16 @@ class MemoryNode(BaseModel):
         """Update access statistics."""
         self.access_count += 1
         self.last_accessed = datetime.now()
+    
+    def get_content_hash(self) -> str:
+        """Generate a hash of the content for deduplication."""
+        import hashlib
+        
+        # Combine all text content
+        text_content = self.get_text_content()
+        
+        # Create MD5 hash
+        return hashlib.md5(text_content.encode('utf-8')).hexdigest()
     
     def calculate_relevance(self, current_time: datetime) -> float:
         """Calculate relevance score based on importance, recency, and decay.
