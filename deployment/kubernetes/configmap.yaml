@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aura-config
+  namespace: aura
+data:
+  config.yaml: |
+    system:
+      version: "4.0.0"
+      environment: "production"
+      log_level: "INFO"
+      
+    server:
+      host: "0.0.0.0"
+      port: 8000
+      workers: 4
+      
+    memory:
+      l1_capacity: 1000
+      l2_capacity: 10000
+      cache_size: "4GB"
+      retention_days: 365
+      
+    agents:
+      default_timeout: 60
+      max_retries: 3
+      cost_limit_per_task: 50.00
+      
+    security:
+      secret_key: "${SECRET_KEY}"
+      algorithm: "HS256"
+      access_token_expire_minutes: 30
+      
+    monitoring:
+      prometheus_enabled: true
+      metrics_port: 9090
+      health_check_interval: 30
+      
+    storage:
+      redis_url: "redis://aura-redis:6379"
+      postgres_url: "postgresql://aura:${POSTGRES_PASSWORD}@aura-postgres:5432/aura"
+      
+  agents.yaml: |
+    agents:
+      openai:
+        type: "openai"
+        enabled: true
+        priority: 1
+        config:
+          api_key: "${OPENAI_API_KEY}"
+          model: "gpt-4"
+          base_url: "https://api.openai.com/v1"
+        capabilities:
+          - "text_generation"
+          - "code_generation"
+          - "analysis"
+          - "image_generation"
+          
+      anthropic:
+        type: "anthropic"
+        enabled: true
+        priority: 2
+        config:
+          api_key: "${ANTHROPIC_API_KEY}"
+          model: "claude-3-sonnet-20240229"
+        capabilities:
+          - "text_generation"
+          - "analysis"
+          - "summarization"
+          
+      jina_embedder:
+        type: "jina_embedder"
+        enabled: true
+        priority: 1
+        config:
+          api_key: "${JINA_API_KEY}"
+          model: "jina-embeddings-v3"
+        capabilities:
+          - "text_embedding"
+          
+      jina_reranker:
+        type: "jina_reranker"
+        enabled: true
+        priority: 1
+        config:
+          api_key: "${JINA_API_KEY}"
+          model: "jina-reranker-v2-base-multilingual"
+        capabilities:
+          - "reranking"
+          
+      local:
+        type: "local"
+        enabled: true
+        priority: 3
+        config: {}
+        capabilities:
+          - "code_generation"
+          - "analysis"
+          - "image_analysis"

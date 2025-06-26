@@ -1,0 +1,40 @@
+# Core dependencies
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+aiohttp>=3.8.0
+asyncio-mqtt>=0.11.0
+
+# Memory and storage
+faiss-cpu>=1.7.0
+redis>=4.5.0
+sqlalchemy>=2.0.0
+alembic>=1.10.0
+
+# AI and ML
+openai>=1.0.0
+anthropic>=0.3.0
+jina>=3.0.0
+
+# Utilities
+typer[all]>=0.9.0
+rich>=13.0.0
+pyyaml>=6.0
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Monitoring and logging
+prometheus-client>=0.16.0
+structlog>=23.0.0
+sentry-sdk[fastapi]>=1.20.0
+
+# Development and testing (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.0.0
+pre-commit>=3.0.0
