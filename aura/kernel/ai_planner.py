@@ -56,6 +56,13 @@ class AIPlannerService:
             plan_json = response.choices[0].message.content
             console.print(f"[dim]Response received: {plan_json[:100]}...[/dim]")
             
+            # Clean up the response if it contains markdown code blocks
+            if plan_json.startswith("```json"):
+                plan_json = plan_json.replace("```json", "", 1)
+                if plan_json.endswith("```"):
+                    plan_json = plan_json[:-3]
+                plan_json = plan_json.strip()
+            
             # Parse JSON response
             plan = json.loads(plan_json)
         except Exception as e:
