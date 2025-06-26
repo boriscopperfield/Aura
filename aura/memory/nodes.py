@@ -5,6 +5,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
+import hashlib
+import json
+import base64
+import numpy as np
 
 
 class EntityType(Enum):
@@ -73,6 +77,36 @@ class ContentBlock:
     metadata: Dict[str, Any]
     text_description: Optional[str] = None  # For non-text content
     extracted_features: Optional[Dict[str, Any]] = None
+    
+    def get_hash(self) -> str:
+        """Generate a hash of the content for caching."""
+        if isinstance(self.data, str):
+            content = self.data.encode('utf-8')
+        else:
+            content = self.data
+            
+        return hashlib.sha256(content).hexdigest()
+    
+    def to_embedding_input(self) -> Dict[str, Any]:
+        """Convert to format for embedding API."""
+        if self.type == ContentType.TEXT:
+            return {"text": self.data if isinstance(self.data, str) else self.data.decode('utf-8')}
+        elif self.type == ContentType.IMAGE:
+            # If data is a URL, return as is
+            if isinstance(self.data, str) and (self.data.startswith('http://') or self.data.startswith('https://')):
+                return {"image": self.data}
+            # Otherwise, assume it's bytes and encode as base64
+            img_data = self.data if isinstance(self.data, bytes) else self.data.encode('utf-8')
+            return {"image": base64.b64encode(img_data).decode('utf-8')}
+        elif self.type == ContentType.CODE:
+            # For code, use the text data with a special prefix
+            code_text = self.data if isinstance(self.data, str) else self.data.decode('utf-8')
+            return {"text": f"```\n{code_text}\n```"}
+        else:
+            # For other types, use text description if available
+            if self.text_description:
+                return {"text": self.text_description}
+            return {"text": f"Content of type {self.type.value}"}
 
 
 @dataclass
@@ -89,10 +123,33 @@ class Relation:
 class EmbeddingSet:
     """Set of embeddings for a memory node."""
     
+    # Chunk-level embeddings (one vector per content block)
+    chunk_embeddings: Dict[str, List[float]] = field(default_factory=dict)
+    
+    # Token-level embeddings (sequence of vectors per content block)
+    token_embeddings: Dict[str, List[List[float]]] = field(default_factory=dict)
+    
+    # Vector store IDs for efficient retrieval
+    vector_ids: Dict[str, Any] = field(default_factory=dict)
+    
+    # Model information
+    model_info: Dict[str, str] = field(default_factory=dict)
+    
+    # Legacy fields for backward compatibility
     chunk_embedding: List[float] = field(default_factory=list)
-    token_embeddings: Dict[str, List[float]] = field(default_factory=dict)
     chunk_vector_id: Optional[int] = None
     token_vector_ids: Optional[Dict[str, int]] = None
+    
+    def get_combined_chunk_embedding(self) -> List[float]:
+        """Get a combined chunk embedding by averaging all chunk embeddings."""
+        if self.chunk_embeddings:
+            # Average all chunk embeddings
+            embeddings = list(self.chunk_embeddings.values())
+            return list(np.mean(embeddings, axis=0))
+        elif self.chunk_embedding:
+            # Backward compatibility
+            return self.chunk_embedding
+        return []
 
 
 @dataclass
@@ -125,8 +182,58 @@ class MemoryNode:
     # Vector embeddings
     embeddings: EmbeddingSet = field(default_factory=EmbeddingSet)
     
+    def get_text_content(self) -> str:
+        """Get all text content concatenated."""
+        texts = []
+        for block in self.content:
+            if block.type == ContentType.TEXT or block.type == ContentType.CODE:
+                if isinstance(block.data, str):
+                    texts.append(block.data)
+                else:
+                    texts.append(block.data.decode('utf-8'))
+            elif block.text_description:
+                texts.append(block.text_description)
+        return "\n".join(texts)
+    
+    def get_embedding_inputs(self) -> List[Dict[str, Any]]:
+        """Get inputs formatted for embedding API."""
+        return [block.to_embedding_input() for block in self.content]
+    
+    def update_access_stats(self) -> None:
+        """Update access statistics."""
+        self.access_count += 1
+        self.last_accessed = datetime.now()
+    
+    def calculate_relevance(self, current_time: datetime) -> float:
+        """Calculate relevance score based on importance, recency, and decay."""
+        # Time since last access in days
+        time_diff = (current_time - self.last_accessed).total_seconds() / (24 * 3600)
+        
+        # Decay factor based on time
+        decay_factor = 1.0 / (1.0 + self.decay_rate * time_diff)
+        
+        # Combine importance and recency
+        return self.importance * decay_factor * (1.0 + 0.1 * self.access_count)
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert memory node to dictionary."""
+        # Convert embeddings to serializable format
+        embeddings_dict = {
+            "chunk_vector_id": self.embeddings.chunk_vector_id,
+            "token_vector_ids": self.embeddings.token_vector_ids,
+            "vector_ids": self.embeddings.vector_ids,
+            "model_info": self.embeddings.model_info
+        }
+        
+        # Add chunk embeddings if they exist (convert numpy arrays to lists)
+        if self.embeddings.chunk_embeddings:
+            embeddings_dict["chunk_embeddings"] = {
+                k: v.tolist() if isinstance(v, np.ndarray) else v
+                for k, v in self.embeddings.chunk_embeddings.items()
+            }
+        
+        # Don't include token embeddings in serialization (too large)
+        
         return {
             "id": self.id,
             "created_at": self.created_at.isoformat(),
@@ -172,10 +279,7 @@ class MemoryNode:
             "access_count": self.access_count,
             "last_accessed": self.last_accessed.isoformat(),
             "decay_rate": self.decay_rate,
-            "embeddings": {
-                "chunk_vector_id": self.embeddings.chunk_vector_id,
-                "token_vector_ids": self.embeddings.token_vector_ids
-            }
+            "embeddings": embeddings_dict
         }
     
     @classmethod
@@ -229,8 +333,14 @@ class MemoryNode:
         # Create embeddings
         embeddings = EmbeddingSet(
             chunk_vector_id=data["embeddings"].get("chunk_vector_id"),
-            token_vector_ids=data["embeddings"].get("token_vector_ids")
+            token_vector_ids=data["embeddings"].get("token_vector_ids"),
+            vector_ids=data["embeddings"].get("vector_ids", {}),
+            model_info=data["embeddings"].get("model_info", {})
         )
+        
+        # Add chunk embeddings if they exist
+        if "chunk_embeddings" in data["embeddings"]:
+            embeddings.chunk_embeddings = data["embeddings"]["chunk_embeddings"]
         
         # Create memory node
         return cls(
