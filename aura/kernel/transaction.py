@@ -62,6 +62,12 @@ class TransactionManager:
         # Initialize Git repository if it doesn't exist
         if not (workspace_path / ".git").exists():
             self.repo = git.Repo.init(workspace_path)
+            # Create initial commit to establish HEAD
+            if not os.path.exists(workspace_path / "README.md"):
+                with open(workspace_path / "README.md", "w") as f:
+                    f.write("# AURA Workspace\n\nThis is an AURA workspace.")
+            self.repo.git.add("README.md")
+            self.repo.git.commit("-m", "Initial commit")
         else:
             self.repo = git.Repo(workspace_path)
     

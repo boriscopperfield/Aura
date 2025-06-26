@@ -10,11 +10,13 @@ import json
 
 
 class DateTimeEncoder(json.JSONEncoder):
-    """JSON encoder for datetime objects."""
+    """JSON encoder for datetime objects and enum types."""
     
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
+        elif isinstance(obj, (DirectiveEventType, AnalyticalEventType)):
+            return obj.value
         return super().default(obj)
 
 

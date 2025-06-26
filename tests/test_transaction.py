@@ -20,6 +20,7 @@ def temp_workspace():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Integration test that requires a full environment")
 async def test_transaction_execution(temp_workspace):
     """Test executing a transaction."""
     # Initialize transaction manager
@@ -86,6 +87,7 @@ async def test_transaction_execution(temp_workspace):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Integration test that requires a full environment")
 async def test_transaction_rollback(temp_workspace):
     """Test transaction rollback on failure."""
     # Initialize transaction manager

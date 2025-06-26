@@ -2,6 +2,7 @@
 Command line interface for AURA system.
 """
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -54,7 +55,7 @@ def run(
         task = progress.add_task("Analyzing intent...", total=100)
         for i in range(0, 101, 10):
             progress.update(task, completed=i)
-            typer.sleep(0.1)
+            time.sleep(0.1)
     
     confidence = 0.94
     console.print(f"✓ Intent analyzed with {confidence:.0%} confidence\n")
@@ -184,7 +185,7 @@ def memory(
         task = progress.add_task("Searching...", total=100)
         for i in range(0, 101, 10):
             progress.update(task, completed=i)
-            typer.sleep(0.1)
+            time.sleep(0.1)
     
     # Display results table
     table = Table()
@@ -341,13 +342,13 @@ def revert(
         
         # Simulate operations
         progress.update(task1, completed=1)
-        typer.sleep(0.5)
+        time.sleep(0.5)
         progress.update(task2, completed=1)
-        typer.sleep(0.5)
+        time.sleep(0.5)
         progress.update(task3, completed=1)
-        typer.sleep(0.5)
+        time.sleep(0.5)
         progress.update(task4, completed=1)
-        typer.sleep(0.5)
+        time.sleep(0.5)
         progress.update(task5, completed=1)
     
     console.print("\n✅ [bold green]System successfully restored to v2.0-campaign-init[/bold green]\n")

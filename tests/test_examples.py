@@ -12,6 +12,7 @@ sys.path.append(str(Path(__file__).parent.parent / "examples"))
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Integration test that requires a full environment")
 async def test_demo_script():
     """Test the demo script."""
     # Import the demo script

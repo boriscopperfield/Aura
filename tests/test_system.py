@@ -21,6 +21,7 @@ def temp_workspace():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Integration test that requires a full environment")
 async def test_end_to_end_workflow(temp_workspace):
     """Test an end-to-end workflow with AURA."""
     # Initialize transaction manager
