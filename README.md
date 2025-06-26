@@ -17,6 +17,9 @@ pip install -e .
 
 # Run AURA
 aura --help
+
+# Create a task
+aura run "Create a blog post about AI assistants"
 ```
 
 ## System Architecture
@@ -28,6 +31,41 @@ AURA consists of several key components:
 - **Execution Layer**: Task Executor, Agent Manager, Agent Pool
 - **Event Distribution**: Event Bus
 
+## Advanced Memory System
+
+AURA features a sophisticated memory system with multimodal embedding capabilities:
+
+### Retrieval Models (Embedders)
+- **Multimodal Chunk Embedding**: Encodes content blocks into vectors for coarse-grained retrieval
+- **Multimodal Token Embedding**: Encodes elements into sequence vectors for fine-grained search
+- **Context-Aware Embeddings**: Understands intra-document context for more relevant results
+
+### Refinement Models (Rerankers)
+- **Multimodal Reranker**: Takes a query and candidate chunks to precisely score relevance
+- **Graph-Based Expansion**: Follows relationships to discover related content
+
+### Memory Learning
+- **Preference Learning**: Automatically detects user preferences from interactions
+- **Pattern Recognition**: Identifies workflow patterns and best practices
+- **Continuous Improvement**: Memory evolves over time with usage
+
+## AI Integration
+
+AURA integrates with modern AI models:
+- **OpenAI GPT Models**: For planning and reasoning
+- **Jina AI Embeddings**: For efficient memory retrieval
+- **Custom Agent Pool**: Extensible framework for specialized AI agents
+
 ## Development Status
 
 This project is currently in active development based on the v4.0 specification.
+
+## Requirements
+
+- Python 3.10+
+- OpenAI API key (for AI planning)
+- Jina AI API key (for memory embeddings)
+
+## License
+
+MIT
