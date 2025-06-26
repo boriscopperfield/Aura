@@ -41,19 +41,27 @@ class AIPlannerService:
         """Create a plan based on user intent."""
         console.print(f"[bold blue]Creating plan for intent:[/bold blue] {intent}")
         
-        # Generate a plan using the AI model
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": self._get_system_prompt()},
-                {"role": "user", "content": f"Create a plan for the following intent: {intent}"}
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        # Extract the plan from the response
-        plan_json = response.choices[0].message.content
-        plan = json.loads(plan_json)
+        try:
+            # Generate a plan using the AI model
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self._get_system_prompt()},
+                    {"role": "user", "content": f"Create a plan for the following intent: {intent}"}
+                ],
+                response_format={"type": "json_object"}
+            )
+            
+            # Extract the plan from the response
+            plan_json = response.choices[0].message.content
+            console.print(f"[dim]Response received: {plan_json[:100]}...[/dim]")
+            
+            # Parse JSON response
+            plan = json.loads(plan_json)
+        except Exception as e:
+            console.print(f"[bold red]Error with OpenAI API:[/bold red] {str(e)}")
+            # Create a fallback plan
+            plan = self._create_fallback_plan(intent)
         
         # Create events from the plan
         events = self._create_events_from_plan(plan, intent)
@@ -177,6 +185,61 @@ class AIPlannerService:
             events.append(node_added_event)
         
         return events
+    
+    def _create_fallback_plan(self, intent: str) -> Dict[str, Any]:
+        """Create a fallback plan when the AI model fails."""
+        task_id = f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Create a simple plan based on the intent
+        return {
+            "task_id": task_id,
+            "name": f"Blog Post: {intent[:30]}...",
+            "description": f"Create a blog post about {intent}",
+            "subtasks": [
+                {
+                    "node_id": "research",
+                    "name": "Research",
+                    "description": "Research the topic",
+                    "assigned_agent": "gpt-4o",
+                    "estimated_duration_seconds": 300,
+                    "dependencies": [],
+                    "file_operations": [
+                        {
+                            "type": "create_file",
+                            "path": f"/tasks/{task_id}/research/notes.md",
+                            "content": f"# Research Notes\n\nTopic: {intent}"
+                        }
+                    ]
+                },
+                {
+                    "node_id": "writing",
+                    "name": "Writing",
+                    "description": "Write the blog post",
+                    "assigned_agent": "gpt-4o",
+                    "estimated_duration_seconds": 600,
+                    "dependencies": ["research"],
+                    "file_operations": [
+                        {
+                            "type": "create_file",
+                            "path": f"/tasks/{task_id}/writing/blog_post.md",
+                            "content": f"# Blog Post\n\nTopic: {intent}\n\n## Introduction\n\n## Main Content\n\n## Conclusion"
+                        }
+                    ]
+                },
+                {
+                    "node_id": "editing",
+                    "name": "Editing",
+                    "description": "Edit and finalize the blog post",
+                    "assigned_agent": "gpt-4o",
+                    "estimated_duration_seconds": 300,
+                    "dependencies": ["writing"],
+                    "file_operations": []
+                }
+            ],
+            "estimated_duration_seconds": 1200,
+            "required_agents": ["gpt-4o"],
+            "confidence": 0.8
+        }
     
     def _create_file_operations_from_plan(self, plan: Dict[str, Any]) -> List[FileOperation]:
         """Create file operations from the plan."""
