@@ -3,6 +3,7 @@ AI-powered planner for AURA system.
 """
 import os
 import json
+import dotenv
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
@@ -12,9 +13,16 @@ from rich.console import Console
 from aura.kernel.events import DirectiveEventType, AnalyticalEventType, Event, EventMetadata, EventSource
 from aura.kernel.transaction import FileOperation, TransactionProposal
 
+# Load environment variables
+dotenv.load_dotenv("/workspace/.env")
+
 # Configure OpenAI client
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 openai.base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+# Debug info
+print(f"OpenAI API Key: {openai.api_key[:5]}...{openai.api_key[-4:] if openai.api_key else 'None'}")
+print(f"OpenAI Base URL: {openai.base_url}")
 
 console = Console()
 
